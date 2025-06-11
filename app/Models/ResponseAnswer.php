@@ -20,19 +20,26 @@ class ResponseAnswer extends Model
         'formatted_address'
     ];
 
-    // Relasi: Jawaban milik satu respon
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array
+     */
+    protected $casts = [
+        // --- BLOK ENKRIPSI ---
+        'answer_text' => 'encrypted',
+    ];
+
     public function response()
     {
         return $this->belongsTo(Response::class);
     }
 
-    // Relasi: Jawaban milik satu pertanyaan
     public function question()
     {
         return $this->belongsTo(Question::class);
     }
 
-    // Relasi: Jika jawaban berupa pilihan, maka berelasi dengan QuestionOption
     public function option()
     {
         return $this->belongsTo(QuestionOption::class);

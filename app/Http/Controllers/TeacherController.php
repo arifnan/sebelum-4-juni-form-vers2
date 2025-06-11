@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Hash;
 // use Illuminate\Support\Facades\Response;    // tambahkan ini
 use App\Models\Form; // <-- TAMBAHKAN IMPORT Form
 use App\Http\Resources\FormResource; // <-- TAMBAHKAN IMPORT FormResource
-use Illuminate\Support\Facades\Hash;
+
 class TeacherController extends Controller
 {
     public function index(Request $request) {
@@ -74,25 +74,21 @@ class TeacherController extends Controller
   /**
          * Mengambil riwayat formulir yang dibuat oleh guru yang terautentikasi.
          */
-        public function apiGetFormsHistory(Request $request)
-        {
-            $user = $request->user(); // Mendapatkan guru yang terautentikasi
+   public function apiGetFormsHistory(Request $request)
+{
+    $user = $request->user();
 
-            // Pastikan user adalah instance dari Teacher atau model User dengan peran guru
-            if (!$user || !($user instanceof Teacher || (property_exists($user, 'role') && $user->role === 'teacher'))) {
-                return response()->json(['message' => 'Unauthorized or not a teacher.'], 403);
-            }
+    if (!$user || !($user instanceof \App\Models\Teacher || (property_exists($user, 'role') && $user->role === 'teacher'))) {
+        return response()->json(['message' => 'Unauthorized or not a teacher.'], 403);
+    }
 
-            // Ambil forms milik teacher tersebut, beserta relasi questions dan teacher (opsional untuk teacher)
-            $forms = Form::where('teacher_id', $user->id)
-                         ->with(['questions.options']) // Eager load questions dan options dari questions
-                         ->latest() // Urutkan berdasarkan yang terbaru
-                         ->get();
+    // Ambil forms dan eager load relasi yang diperlukan oleh FormResource
+    $forms = \App\Models\Form::where('teacher_id', $user->id)
+                 ->with(['questions.options', 'teacher']) // Jangan lupa 'teacher' untuk di-load
+                 ->latest()
+                 ->get();
 
-            if ($forms->isEmpty()) {
-                return response()->json(['message' => 'Belum ada formulir yang dibuat.', 'data' => []], 200);
-            }
-
-            return FormResource::collection($forms);
-        }
+    // Langsung kembalikan koleksi. Laravel akan handle jika koleksi kosong.
+    return \App\Http\Resources\FormResource::collection($forms);
+}
 }

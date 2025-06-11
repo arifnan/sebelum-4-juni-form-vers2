@@ -142,7 +142,7 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'Login berhasil',
-            'user' => new UserResource($user->fresh()->load('notifications', 'favoriteForms')),
+            'user' => new UserResource($user->fresh()->load('notifications', 'favorites')),
             'token' => $token,
             'role' => $role // Kirim role yang digunakan untuk login
         ]);
@@ -177,7 +177,7 @@ class AuthController extends Controller
         if (!$user) {
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
-        return response()->json(new UserResource($user->load('notifications', 'favoriteForms')));
+        return response()->json(new UserResource($user->load('notifications', 'favorites')));
     }
 
     /**

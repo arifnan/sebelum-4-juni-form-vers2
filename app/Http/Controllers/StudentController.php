@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Hash;
 // use Illuminate\Support\Facades\View;        // tambahkan ini
 // use Illuminate\Support\Facades\Redirect;    // tambahkan ini
 // use Illuminate\Support\Facades\Response;    // tambahkan ini
+use App\Http\Resources\FormResponseResource;
+
 class StudentController extends Controller
 {
     public function index(Request $request) {
@@ -65,4 +67,34 @@ class StudentController extends Controller
             'data' => $query
         ], 200);
     }
+  
+  	public function favoriteForms()
+    {
+        // 'user_type' akan dicocokkan dengan nama class ini
+        return $this->morphToMany(Form::class, 'user', 'favorite_forms');
+    }
+  
+    public function apiGetResponseHistory(Request $request)
+    {
+        $user = $request->user(); // Mendapatkan siswa yang terautentikasi
+
+        if (!$user || !$user instanceof Student) {
+            return response()->json(['message' => 'Unauthorized or not a student.'], 403);
+        }
+
+        // Ambil semua 'responses' milik siswa, beserta relasi 'form'
+        // 'form.teacher' juga di-load agar nama guru bisa ditampilkan jika perlu
+        $responses = $user->submittedResponses()
+                           ->with(['form.teacher'])
+                           ->latest() // Urutkan berdasarkan yang terbaru diisi
+                           ->get();
+
+        if ($responses->isEmpty()) {
+            return response()->json(['message' => 'Anda belum mengisi formulir apapun.', 'data' => []], 200);
+        }
+
+        // Gunakan FormResponseResource untuk format data yang konsisten
+        return FormResponseResource::collection($responses);
+    }
+  
 }

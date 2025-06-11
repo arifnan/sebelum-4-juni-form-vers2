@@ -13,6 +13,8 @@ use App\Http\Controllers\ResponseExportController;
 // Route utama yang langsung menampilkan halaman login
 Route::get('/', [AuthController::class, 'showLogin'])->name('home');
 
+
+
 // **AUTH ROUTES**
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
 Route::post('/register', [AuthController::class, 'register']);
@@ -45,3 +47,4 @@ Route::middleware(['auth:admin'])->group(function () {
 });
 Route::get('/export-responses/pdf', [ResponseExportController::class, 'exportPdf'])->name('responses.export.pdf');
 Route::get('/export-responses/excel', [ResponseExportController::class, 'exportExcel'])->name('responses.export.excel');
+

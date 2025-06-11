@@ -101,55 +101,57 @@ class FormController extends Controller
         return FormResource::collection($forms);
     }
 
-    public function apiStore(Request $request)
-    {
-        $user = $request->user();
-        if (!$user || !$user instanceof Teacher) { // Sesuaikan dengan model User/Teacher Anda
-            return response()->json(['message' => 'Unauthorized: Only teachers can create forms.'], 403);
-        }
+public function apiStore(Request $request)
+{
+    $user = $request->user();
+    if (!$user || !$user instanceof Teacher) {
+        return response()->json(['message' => 'Unauthorized: Only teachers can create forms.'], 403);
+    }
 
-        $validatedData = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'questions' => 'present|array',
-            'questions.*.question_text' => 'required|string|max:65535',
-            'questions.*.question_type' => ['required', 'string', Rule::in(['Text', 'MultipleChoice', 'Checkbox', 'LinearScale'])],
-            'questions.*.options' => 'nullable|array',
-            'questions.*.options.*' => 'nullable|string|max:255', // Validasi setiap opsi
-            'questions.*.required' => 'required|boolean',
-        ]);
+    $validatedData = $request->validate([
+        'title' => 'required|string|max:255',
+        'description' => 'nullable|string',
+        'questions' => 'present|array',
+        'questions.*.question_text' => 'required|string|max:65535',
+        'questions.*.question_type' => ['required', 'string',Rule::in(['Text', 'MultipleChoice', 'Checkbox', 'LinearScale','true_false', 'file_upload'])],
+        'questions.*.options' => 'nullable|array',
+        'questions.*.options.*' => 'nullable|string|max:255',
+        'questions.*.required' => 'required|boolean',
+    ]);
 
-        $form = Form::create([
-            'title' => $validatedData['title'],
-            'description' => $validatedData['description'],
-            'teacher_id' => $user->id,
-            'form_code' => Str::upper(Str::random(8))
-        ]);
+    // Buat form dengan form_code yang dihasilkan secara acak
+    $form = Form::create([
+        'title' => $validatedData['title'],
+        'description' => $validatedData['description'],
+        'teacher_id' => $user->id,
+        'form_code' => Str::upper(Str::random(8))
+    ]);
 
-        if (!empty($validatedData['questions'])) {
-            foreach ($validatedData['questions'] as $questionData) {
-                $newQuestion = $form->questions()->create([
-                    'question_text' => $questionData['question_text'],
-                    'question_type' => $questionData['question_type'],
-                    'required' => $questionData['required'],
-                    // 'options' tidak diisi di sini karena akan dibuat sebagai QuestionOption
-                ]);
+    if (!empty($validatedData['questions'])) {
+        foreach ($validatedData['questions'] as $questionData) {
+            $newQuestion = $form->questions()->create([
+                'question_text' => $questionData['question_text'],
+                'question_type' => $questionData['question_type'],
+                'required' => $questionData['required'],
+            ]);
 
-                // Buat QuestionOptions jika ada dan tipe pertanyaan mendukung
-                if (in_array($questionData['question_type'], ['MultipleChoice', 'Checkbox', 'LinearScale']) && isset($questionData['options']) && is_array($questionData['options'])) {
-                    foreach ($questionData['options'] as $optionText) {
-                        // Untuk LinearScale, $optionText akan berisi min, max, minLabel, maxLabel
-                        // Anda mungkin ingin memvalidasi ini lebih lanjut atau memprosesnya secara berbeda
-                        // Untuk sekarang, kita simpan apa adanya.
-                        if (!empty($optionText) || $questionData['question_type'] === 'LinearScale') {
-                             $newQuestion->options()->create(['option_text' => $optionText]);
-                        }
+            if (in_array($questionData['question_type'], ['MultipleChoice', 'Checkbox', 'LinearScale']) && isset($questionData['options']) && is_array($questionData['options'])) {
+                foreach ($questionData['options'] as $optionText) {
+                    if (!empty($optionText) || $questionData['question_type'] === 'LinearScale') {
+                         $newQuestion->options()->create(['option_text' => $optionText]);
                     }
                 }
             }
         }
-        return new FormResource($form->fresh()->load(['questions.options', 'teacher']));
     }
+
+    // PENTING: Muat relasi pada objek $form yang sudah ada, BUKAN menggunakan fresh()
+    $form->load(['questions.options', 'teacher']);
+
+    // Kembalikan resource dengan objek $form yang sudah lengkap
+    return new FormResource($form);
+}
+
 
     public function apiShow(Request $request, Form $form)
     {

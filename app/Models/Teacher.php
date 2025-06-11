@@ -1,20 +1,20 @@
 <?php
 
 namespace App\Models;
-use Illuminate\Database\Eloquent\Model;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Laravel\Sanctum\HasApiTokens;       // <--- TAMBAHKAN IMPORT INI
-use Illuminate\Notifications\Notifiable;  // <--- TAMBAHKAN IMPORT INI
+use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
 class Teacher extends Authenticatable
 {
-     use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
-    protected $table = 'teachers'; // Sesuai SQL dump Anda
+    protected $table = 'teachers';
 
     protected $fillable = [
         'nip',
@@ -23,20 +23,32 @@ class Teacher extends Authenticatable
         'email',
         'password',
         'subject',
-        'address'
+        'address',
+        'profile_photo_path'
     ];
 
     protected $hidden = [
         'password',
-        'remember_token' // Standar untuk ditambahkan
+        'remember_token'
     ];
 
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array
+     */
     protected $casts = [
         'password' => 'hashed',
         'gender' => 'boolean',
+        // --- BLOK ENKRIPSI ---
+        'name' => 'encrypted',
+        'nip' => 'encrypted',
+        'email' => 'encrypted',
+        'address' => 'encrypted',
+        'subject' => 'encrypted',
+        'profile_photo_path' => 'encrypted',
     ];
 
-    // Relasi yang sudah Anda definisikan atau butuhkan
     public function createdForms(): HasMany
     {
         return $this->hasMany(Form::class, 'teacher_id');
@@ -48,21 +60,18 @@ class Teacher extends Authenticatable
                     ->orderBy('created_at', 'desc');
     }
 
-    public function favoriteForms(): MorphToMany
+    public function favorites(): MorphToMany
     {
-        return $this->morphToMany(Form::class, 'user', 'favorite_forms', 'user_id', 'form_id')
-                    ->withTimestamps();
+        return $this->morphToMany(Form::class, 'user', 'favorite_forms');
     }
 
-    // Accessor untuk konsistensi dengan UserResource jika diperlukan
     public function getRoleAttribute(): string
     {
         return 'teacher';
     }
 
-    // Accessor lain yang mungkin dibutuhkan UserResource jika Teacher tidak punya kolom tersebut
     public function getGradeAttribute(): ?string
     {
-        return null; // Guru tidak punya 'grade'
+        return null;
     }
 }

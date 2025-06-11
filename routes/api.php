@@ -9,6 +9,7 @@ use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\ResponseController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\Api\FavoriteFormController;
 
 Route::get('/admins', [AdminController::class, 'apiIndex']);
 
@@ -22,9 +23,10 @@ Route::post('/login', [AuthController::class, 'loginUser']); // Tambahkan ini ji
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logoutUser']); // Tambahkan ini
     Route::get('/user', [AuthController::class, 'getAuthenticatedUser']); // Tambahkan ini
-	Route::put('/profile', [UserController::class, 'apiUpdateUserProfile']);
+	Route::post('/profile', [UserController::class, 'apiUpdateUserProfile']);
     // API untuk siswa
     Route::get('/students', [StudentController::class, 'apiIndex']);
+  	Route::get('/student/responses/history', [StudentController::class, 'apiGetResponseHistory']);
 
     // API untuk guru
     Route::get('/teachers', [TeacherController::class, 'apiIndex']);
@@ -35,6 +37,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/forms', [FormController::class, 'apiStore']);
     Route::put('/forms/{form}', [FormController::class, 'apiUpdate']);
     Route::delete('/forms/{form}', [FormController::class, 'apiDestroy']);
+   	Route::get('/forms/{form}', [FormController::class, 'apiShow']);
 
     // API untuk question
     Route::get('/questions', [QuestionController::class, 'apiIndex']);
@@ -46,6 +49,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/responses', [ResponseController::class, 'apiIndex']);
     Route::post('/responses', [ResponseController::class, 'apiStore']);
     Route::delete('/responses/{response}', [ResponseController::class, 'apiDestroy']);
+    Route::get('/responses/{response}', [ResponseController::class, 'apiShowResponseDetail']);
+  	Route::get('/forms/{form}/responses', [ResponseController::class, 'apiIndexByForm']);
   
+   	//FAVORIT FORMS
+    Route::get('/favorites', [FavoriteFormController::class, 'index']);
+    Route::post('/forms/{form}/favorite', [FavoriteFormController::class, 'store']);
+    Route::delete('/forms/{form}/favorite', [FavoriteFormController::class, 'destroy']);
+  	Route::get('/forms/code/{form_code}', [FormController::class, 'apiGetByFormCode']);
   
 });
