@@ -9,7 +9,7 @@ return [
     'guards' => [
         'web' => [ // Guard untuk autentikasi web (session-based)
             'driver' => 'session',
-            'provider' => 'admins', // Jika admin Anda menggunakan model Admin dan provider 'admins'
+            'provider' => 'multi_role_users', // Jika admin Anda menggunakan model Admin dan provider 'admins'
         ],
 
         'admin' => [ // Jika Anda memiliki guard admin terpisah untuk web
@@ -20,58 +20,54 @@ return [
         // ---- TAMBAHKAN GUARD UNTUK API MENGGUNAKAN SANCTUM (INI YANG PALING PENTING UNTUK API ANDA) ----
         'sanctum' => [
             'driver' => 'sanctum',
-            // 'provider' dapat di-set null karena Sanctum akan mencoba mencocokkan token
-            // dengan model yang menggunakan HasApiTokens dan terdaftar di 'providers'.
-            // Namun, penting bahwa provider untuk Teacher dan Student didefinisikan di bawah.
-            'provider' => null,
+            'provider' => 'multi_role_users',
         ],
         // --------------------------------------------------------------------
     ],
 
-    'providers' => [
-        'admins' => [ // Provider untuk model Admin Anda
+     'providers' => [
+        'admins' => [
             'driver' => 'eloquent',
             'model' => App\Models\Admin::class,
         ],
 
-        // ---- TAMBAHKAN PROVIDER UNTUK MODEL TEACHER (PENTING UNTUK SANCTUM API!) ----
+        'multi_role_users' => [ // <-- TAMBAHKAN PROVIDER KUSTOM BARU INI
+            'driver' => 'custom_user_provider_driver', // <-- Nama driver yang akan kita daftarkan
+            // Model tidak spesifik di sini, karena provider kustom akan menangani Teacher dan Student
+            // Anda bisa menempatkan model default jika diperlukan, misalnya App\Models\User::class,
+            // tetapi provider kustom yang akan memutuskan model mana yang digunakan.
+        ],
+
+        // Provider 'teachers' dan 'students' yang asli tidak perlu dihapus,
+        // tetapi tidak akan digunakan oleh guard 'web' atau 'sanctum' jika Anda mengarahkan ke 'multi_role_users'.
+        // Anda bisa mengomentari atau menghapusnya jika yakin tidak ada guard lain yang memakainya.
+        /*
         'teachers' => [
             'driver' => 'eloquent',
             'model' => App\Models\Teacher::class,
         ],
-        // ---------------------------------------------------------------------------
-
-        // ---- TAMBAHKAN PROVIDER UNTUK MODEL STUDENT (PENTING UNTUK SANCTUM API!) ----
         'students' => [
             'driver' => 'eloquent',
             'model' => App\Models\Student::class,
         ],
-        // ---------------------------------------------------------------------------
-
-        // Provider 'users' default Laravel. Jika model App\Models\User.php Anda
-        // adalah model generik yang TIDAK dipakai untuk login Teacher/Student via API,
-        // ini mungkin tidak secara langsung dipakai oleh guard 'sanctum' untuk Teacher/Student.
-        // 'users' => [
-        //     'driver' => 'eloquent',
-        //     'model' => App\Models\User::class,
-        // ],
+        */
     ],
 
-    'passwords' => [ // Konfigurasi untuk reset password
+    'passwords' => [
         'admins' => [
             'provider' => 'admins',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
             'expire' => 60,
             'throttle' => 60,
         ],
-        'teachers' => [ // Untuk reset password guru jika ada fitur tersebut
-            'provider' => 'teachers',
-            'table' => 'password_reset_tokens', // Gunakan tabel yang sama atau buat yang baru
+        'teachers' => [
+            'provider' => 'multi_role_users', // Ubah ke provider kustom
+            'table' => 'password_reset_tokens',
             'expire' => 60,
             'throttle' => 60,
         ],
-        'students' => [ // Untuk reset password siswa jika ada fitur tersebut
-            'provider' => 'students',
+        'students' => [
+            'provider' => 'multi_role_users', // Ubah ke provider kustom
             'table' => 'password_reset_tokens',
             'expire' => 60,
             'throttle' => 60,
